@@ -62,18 +62,18 @@ function launchGame(gameState) {
     // Update the map display while the game is running.
     setInterval(() => {
         if (view == "in-game" && playing) {
-            updateMap();
+            updateMap(gameState);
         }
     }, 200);
 }
 
-function getGeneratorInRange(position, range) {
-    return gameState.generators.find(g => utils.distanceBetween(position, g.loc) <= range);
+function getGeneratorInRange(gameState, position, range) {
+    return gameState.generators.find(g => distanceBetween(position, g.loc) <= range);
 }
 
 const generatorRadius = 200;
 
-function updateMap() {
+function updateMap(gameState) {
     const pathColor = "#20241b";
     const selfColor = "#b3dfe3";
     const otherPlayerColor = "white";
@@ -132,7 +132,7 @@ function updateMap() {
     const playersToDraw = gameState.players.filter(
         p => p.alive
         && p.id != myId
-        && getGeneratorInRange(p.coords, generatorRadius)
+        && getGeneratorInRange(gameState, p.coords, generatorRadius)
     );
     if (myRole == "Hiker") {
         // For Hikers, draw each player location when they are in range of a generator.
@@ -241,14 +241,14 @@ function updateInterface(gameState) {
 
             // Generator activation control.
             const activationRange = 30 + Math.min(12, myAccuracy);
-            const nearbyGen = getGeneratorInRange(myCoords, activationRange);
+            const nearbyGen = getGeneratorInRange(gameState, myCoords, activationRange);
             if (nearbyGen && !nearbyGen.active) {
-                activateButtonSub.innerText = `${gen.name} GENERATOR`;
+                activateButtonSub.innerText = `${nearbyGen.name} GENERATOR`;
                 show(activateButton);
             } else {
                 hide(activateButton);
             }
-            const inRangeGen = getGeneratorInRange(myCoords, generatorRadius);
+            const inRangeGen = getGeneratorInRange(gameState, myCoords, generatorRadius);
             if (inRangeGen?.active) {
                 fetch(`/reset-safety/${myId}`);
                 genWelcome.innerHTML = `You are at <b>${inRangeGen.name} Generator</b>.`;
@@ -280,10 +280,10 @@ function updateInterface(gameState) {
 
             // Generator deactivation control.
             const activationRange = 30 + Math.min(12, myAccuracy);
-            const nearbyGen = getGeneratorInRange(myCoords, activationRange);
+            const nearbyGen = getGeneratorInRange(gameState, myCoords, activationRange);
             if (nearbyGen?.active) {
                 show(deactivateButton);
-                deactivateButtonSub.innerText = `${gen.name} GENERATOR`;
+                deactivateButtonSub.innerText = `${nearbyGen.name} GENERATOR`;
             } else {
                 hide(deactivateButton);
             }
@@ -354,14 +354,14 @@ joinButton.addEventListener("click", () => {
             id: myId,
             prefers,
         }),
-    }).then(location.reload);
+    }).then(() => location.reload());
 });
 
 startGameButton.addEventListener("click", () => {
     hide(lobbyElem);
     fetch("/start", {
         method: "POST",
-    }).then(location.reload);
+    }).then(() => location.reload());
 });
 
 attackButton.addEventListener("click", () => fetch(`/attack/${myId}`));

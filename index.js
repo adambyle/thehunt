@@ -24,7 +24,7 @@ setInterval(() => {
     if (gameState.state != "active") {
         return;
     }
-    
+
     // Advance the timer based on number of active generators.
     const genCount = gameState.generators.reduce((total, gen) => total + gen.active, 0);
     if (genCount == 1) gameState.timer += 1;
@@ -64,10 +64,13 @@ app.get("/gameState/:playerId", (req, res) => {
     if (!player) {
         res.send(gameState);
         updateGameState();
+        return;
     }
     const messages = gameState.messages;
-    gameState.messages = messages.filter(messages[0] > player.lastMessage);
+    gameState.messages = messages.filter(m => m[0] > player.lastMessage);
     player.lastMessage = gameState.lastMessage;
+
+    player.lastPing = Date.now();
 
     res.send(gameState);
     gameState.messages = messages;
@@ -117,7 +120,10 @@ app.post("/pos/:id/:lat/:long/:speed/:acc", (req, res) => {
 });
 
 app.get("/reset-safety/:id", (req, res) => {
-    getPlayer(req.params.id)?.safety = true;
+    const player = getPlayer(req.params.id);
+    if (player) {
+        player.safety = true;
+    }
 
     res.sendStatus(200);
     updateGameState();
@@ -137,16 +143,17 @@ app.get("/use-safety/:id", (req, res) => {
 
 app.get("/attack/:id", (req, res) => {
     const attacker = getPlayer(req.params.id);
-    const attackRange = 30 * Math.min(1, player.speed) + Math.min(12, attacker.acc, player.acc);
 
     // Kill the target of the attack, who must be in range and not have safety.
-    gameState.players.find(
+    const target = gameState.players.find(
         p => p.id != attacker.id
-        && p.id != gameState.safety
-        && utils.distanceBetween(attacker.coords, player.coords) <= attackRange
-    )?.alive = false;
+            && p.id != gameState.safety
+            && utils.distanceBetween(attacker.coords, p.coords) <= 30 * Math.min(1, p.speed) + Math.min(12, attacker.acc, p.acc)
+    );
+    if (target) {
+        target.alive = false;
+    }
 
-    
     // Check for Safety disable and game end.
     const livingHikerCount = gameState.players.reduce((count, p) => count + p.alive && p.role == "Hiker", 0);
     if (livingHikerCount == 1) {
@@ -166,10 +173,13 @@ app.get("/activate/:id", (req, res) => {
 
     // Activate a generator in range.
     const activationRange = 45 + Math.min(12, activator.acc);
-    gameState.generators.find(
+    const generator = gameState.generators.find(
         g => !g.active
-        && utils.distanceBetween(gen.loc, activator.coords) <= activationRange
-    )?.active = true;
+            && utils.distanceBetween(g.loc, activator.coords) <= activationRange
+    );
+    if (generator) {
+        generator.active = true;
+    }
 
     res.sendStatus(200);
     updateGameState();
@@ -180,11 +190,14 @@ app.get("/deactivate/:id", (req, res) => {
 
     // Deactivate a generator in range.
     const activationRange = 45 + Math.min(12, activator.acc);
-    gameState.generators.find(
+    const generator = gameState.generators.find(
         g => g.active
-        && utils.distanceBetween(gen.loc, activator.coords) <= activationRange
-    )?.active = false;
-    
+            && utils.distanceBetween(g.loc, activator.coords) <= activationRange
+    );
+    if (generator) {
+        generator.active = false;
+    }
+
     res.sendStatus(200);
     updateGameState();
 });
@@ -203,7 +216,7 @@ app.get("/reset", (_, res) => {
 
 app.post("/start", (req, res) => {
     const allGens = JSON.parse(read("generators.json"));
-    
+
     // Loop until there is a generator in the north, south, and west.
     let gameGens;
     while (true) {
@@ -212,7 +225,7 @@ app.post("/start", (req, res) => {
         const genChoices = [...allGens];
         for (let i = 0; i < 4; i++) {
             const genIndex = Math.floor(Math.random() * genChoices.length);
-            gameGens.push(genChoices[index]);
+            gameGens.push(genChoices[genIndex]);
             genChoices.splice(genIndex, 1);
         }
 
@@ -231,7 +244,7 @@ app.post("/start", (req, res) => {
     // Set game data (we're missing player data yet).
     gameState.state = "hiding"; // Can be inactive, hiding, active, or gameover.
     gameState.safety = "0"; // Stores a player id.
-    gameState.generators = genChoices.map((g) => {
+    gameState.generators = gameGens.map((g) => {
         return {
             loc: [g[0], g[1]],
             name: g[2],

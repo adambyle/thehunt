@@ -18,8 +18,8 @@ function deg2rad(deg) {
     return deg * (Math.PI / 180);
 }
 
-const feetPerDegLong = distanceBetween(42.935, 0, 42.935, 1);
+const feetPerDegLong = distanceBetween([42.935, 0], [42.935, 1]);
 const degLongPerFoot = 1 / feetPerDegLong;
-const degLongPerDegLat = feetPerDegLong / distanceBetween(0, 0, 1, 0);
+const degLongPerDegLat = feetPerDegLong / distanceBetween([0, 0], [1, 0]);
 
-exports.calculateDistance = distanceBetween;
+exports.distanceBetween = distanceBetween;
