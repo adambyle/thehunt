@@ -1,0 +1,113 @@
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <title>RANSACK</title>
+    </head>
+    <body>
+        <style>
+            * {
+                color: #20241b;
+                font-family: monospace;
+                box-sizing: border-box;
+            }
+
+            p1 {
+                font-size: 16px;
+            }
+            
+            body {
+                margin: 20px;
+                background: #7d8c6c;
+                height: 100vh;
+                overflow: hidden;
+            }
+
+            canvas {
+                background: #7d8c6c;
+                border: 1px solid #20241b;
+                width: 100%;
+                height: 300px;
+            }
+            
+            #errors {
+                position: absolute;
+                bottom: 20;
+                left: 20;
+            }
+
+            #errors p {
+                color: white;
+            }
+
+            .big-button {
+                width: 100%;
+                height: 60px;
+                margin-top: 10px;
+                font-size: 24px;
+            }
+
+            .big-button.inactive {
+                background: #7d8c6c;
+            }
+
+            .big-button span {
+                font-size: 14px;
+                display: block;
+            }
+
+            progress {
+                width: 100%;
+            }
+        </style>
+        <h1>RANSACK</h1>
+        <div id="loading">
+            <p>Loading...</p>
+        </div>
+        <div id="lobby" style="display: none;">
+            <div id="lobby-inactive" style="display: none;">
+                <p>Game is inactive right now.</p>
+                <label>Enter your name: <input id="name-input"><button id="join">Join</button></label>
+                <p>Choose what you'd rather play as: <select id="role-choice">
+                    <option value="any">Don't Care</option>
+                    <option value="beast">Beast</option>
+                    <option value="hiker">Hiker</option>
+                </select></p>
+            </div>
+            <div id="lobby-active" style="display: none;">
+                <p>A game is currently in progress.</p>
+            </div>
+            <div id="lobby-waiting" style="display: none">
+                <p>Waiting for the game to begin. Here are the players:</p>
+                <ul id="player-list">
+                </ul>
+                <p>Press when everyone is in: <button id="start-game">Begin</button></p>
+            </div>
+            <div id="lobby-gameover" style="display: none;">
+                <p>The game is over.</p>
+                <p id="win-message"></p>
+            </div>
+        </div>
+        <div id="in-game" style="display: none;">
+            <p><span id="player-name"></span> - <b id="player-role"></b></p>
+            <canvas id="map"></canvas>
+            <p id="in-game-hiding"></p>
+            <div id="in-game-active">
+                <progress id="timer-progress"></progress>
+                <p id="death-message">You have died.</p>
+                <button class="big-button" style="display: none;" id="attack-button">ATTACK<span id="attack-button-sub"></span></button>
+                <button class="big-button" style="display: none;" id="safety-button">SAFETY<span id="safety-button-sub"></span></button>
+                <button class="big-button" style="display: none;" id="activate-button">ACTIVATE<span id="activate-button-sub"></span></button>
+                <button class="big-button" style="display: none;" id="deactivate-button">DEACTIVATE<span id="deactivate-button-sub"></span></button>
+                <p id="gen-welcome" style="display: none;"></p>
+            </div>
+        </div>
+        <div id="errors">
+            <p id="wake-lock-error">Please disable battery saver mode so this page stays awake!</p>
+            <p id="geolocation-error">Please enable your location for your browser and this webpage.</p>
+            <button id="reset">Reset game</button>
+        </div>
+
+        <script src="/static/utils.js"></script>
+        <script src="/static/script.js"></script>
+    </body>
+</html>
