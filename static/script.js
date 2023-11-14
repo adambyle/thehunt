@@ -223,7 +223,11 @@ function updateInterface(gameState) {
         if (myRole == "Hiker") {
             // Safety button control.
             let safetyHolder = gameState.players.find(p => p.alive && p.id == gameState.safety);
-            if (safetyHolder?.id == myId) {
+            if (gameState.players.reduce((count, p) => count + p.alive && p.role == "Hiker", 0) <= 1) {
+                // When only one Hiker remains, Safety cannot be activated.
+                safetyButton.classList.add("inactive");
+                safetyButtonSub.innerHTML = "YOU ARE THE LAST HIKER";
+            } else if (safetyHolder?.id == myId) {
                 safetyButton.classList.add("inactive");
                 safetyButtonSub.innerHTML = `YOU HAVE SAFETY`;
             } else if (mySafety) {

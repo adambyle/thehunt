@@ -146,8 +146,12 @@ app.get("/attack/:id", (req, res) => {
         && utils.distanceBetween(attacker.coords, player.coords) <= attackRange
     )?.alive = false;
 
-    // Check for game end.
-    if (!gameState.players.some(p => p.role == "Hiker" && p.alive)) {
+    
+    // Check for Safety disable and game end.
+    const livingHikerCount = gameState.players.reduce((count, p) => count + p.alive && p.role == "Hiker", 0);
+    if (livingHikerCount == 1) {
+        gameState.safety = "0";
+    } if (livingHikerCount == 0) {
         gameState.state = "gameover";
         gameState.winner = "beast";
         setTimeout(resetGameState, 5000);
