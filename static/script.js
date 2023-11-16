@@ -53,7 +53,9 @@ function launchGame(gameState) {
 
             // Whether or not the player is alive is the only self player data
             // that the client received from the server.
-            myAlive = gameState.players.find(p => p.id === myId)?.alive ?? false;
+            const me = gameState.players.find(p => p.id === myId);
+            myAlive = me?.alive ?? false;
+            mySafety = me?.safety ?? false;
 
             updateInterface(gameState);
         }));
@@ -131,8 +133,8 @@ function updateMap(gameState) {
     // Draw player locations.
     const playersToDraw = gameState.players.filter(
         p => p.alive
-        && p.id != myId
-        && getGeneratorInRange(gameState, p.coords, generatorRadius)
+            && p.id != myId
+            && getGeneratorInRange(gameState, p.coords, generatorRadius)
     );
     if (myRole == "Hiker") {
         // For Hikers, draw each player location when they are in range of a generator.
@@ -223,7 +225,7 @@ function updateInterface(gameState) {
         if (myRole == "Hiker") {
             // Safety button control.
             let safetyHolder = gameState.players.find(p => p.alive && p.id == gameState.safety);
-            if (gameState.players.reduce((count, p) => count + p.alive && p.role == "Hiker", 0) <= 1) {
+            if (gameState.players.reduce((count, p) => count + (p.alive && p.role == "Hiker"), 0) <= 1) {
                 // When only one Hiker remains, Safety cannot be activated.
                 safetyButton.classList.add("inactive");
                 safetyButtonSub.innerHTML = "YOU ARE THE LAST HIKER";
@@ -240,7 +242,7 @@ function updateInterface(gameState) {
             show(safetyButton);
 
             // Generator activation control.
-            const activationRange = 30 + Math.min(12, myAccuracy);
+            const activationRange = 60 + Math.min(12, myAccuracy);
             const nearbyGen = getGeneratorInRange(gameState, myCoords, activationRange);
             if (nearbyGen && !nearbyGen.active) {
                 activateButtonSub.innerText = `${nearbyGen.name} GENERATOR`;
@@ -260,10 +262,10 @@ function updateInterface(gameState) {
             // Attack detection.
             const nearbyPlayers = gameState.players.filter(
                 p => p.alive
-                && p.role == "Hiker"
-                && distanceBetween(p.coords, myCoords) <= 20 * Math.max(1, p.speed) + Math.min(12, p.acc, myAccuracy)
+                    && p.role == "Hiker"
+                    && distanceBetween(p.coords, myCoords) <= 30 * Math.max(1, p.speed) + Math.min(12, p.acc, myAccuracy)
             );
-            nearbyPlayers.forEach(p => {
+            for (const player of nearbyPlayers) {
                 if (p.id == gameState.safety) {
                     attackButton.classList.add("inactive");
                     attackButtonSub.innerHTML = `${p.name} HAS SAFETY`;
@@ -272,14 +274,15 @@ function updateInterface(gameState) {
                     attackButton.classList.remove("inactive");
                     attackButtonSub.innerHTML = `ATTACK ${p.name}`;
                     show(attackButton);
+                    break;
                 }
-            });
+            }
             if (nearbyPlayers.length == 0) {
                 hide(attackButton);
             }
 
             // Generator deactivation control.
-            const activationRange = 30 + Math.min(12, myAccuracy);
+            const activationRange = 60 + Math.min(12, myAccuracy);
             const nearbyGen = getGeneratorInRange(gameState, myCoords, activationRange);
             if (nearbyGen?.active) {
                 show(deactivateButton);

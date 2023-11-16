@@ -105,12 +105,12 @@ app.post("/pos/:id/:lat/:long/:speed/:acc", (req, res) => {
         player.acc = Number.parseFloat(req.params.acc);
 
         // Test for game start. Every player has to be within range of their start space.
-        const startDistance = 30;
-        const within_range = p => {
+        const startDistance = 90;
+        const withinRange = p => {
             const startArea = p.role == "Beast" ? gameState.beastStart : gameState.hikerStart;
             return utils.distanceBetween(startArea, p.coords) <= startDistance + Math.min(12, p.acc);
         };
-        if (gameState.state == "hiding" && gameState.players.every(within_range)) {
+        if (gameState.state == "hiding" && gameState.players.every(withinRange)) {
             gameState.state = "active";
         }
     }
@@ -132,7 +132,11 @@ app.get("/reset-safety/:id", (req, res) => {
 app.get("/use-safety/:id", (req, res) => {
     const playerId = req.params.id;
     const player = getPlayer(playerId);
-    if (player?.safety) {
+    if (
+        gameState.safety != playerId
+        && player?.safety
+        && gameState.players.reduce((count, p) => count + (p.alive && p.role == "Hiker"), 0) > 1
+    ) {
         player.safety = false;
         gameState.safety = playerId;
     }
@@ -147,8 +151,9 @@ app.get("/attack/:id", (req, res) => {
     // Kill the target of the attack, who must be in range and not have safety.
     const target = gameState.players.find(
         p => p.id != attacker.id
+            && p.role == "Hiker"
             && p.id != gameState.safety
-            && utils.distanceBetween(attacker.coords, p.coords) <= 30 * Math.min(1, p.speed) + Math.min(12, attacker.acc, p.acc)
+            && utils.distanceBetween(attacker.coords, p.coords) <= 45 * Math.min(1, p.speed) + Math.min(12, attacker.acc, p.acc)
     );
     if (target) {
         target.alive = false;
@@ -171,8 +176,8 @@ app.get("/attack/:id", (req, res) => {
 app.get("/activate/:id", (req, res) => {
     const activator = getPlayer(req.params.id);
 
-    // Activate a generator in range.
-    const activationRange = 45 + Math.min(12, activator.acc);
+    // Activate a generatorn range.
+    const activationRange = 90 + Math.min(12, activator.acc);
     const generator = gameState.generators.find(
         g => !g.active
             && utils.distanceBetween(g.loc, activator.coords) <= activationRange
@@ -189,7 +194,7 @@ app.get("/deactivate/:id", (req, res) => {
     const activator = getPlayer(req.params.id);
 
     // Deactivate a generator in range.
-    const activationRange = 45 + Math.min(12, activator.acc);
+    const activationRange = 90 + Math.min(12, activator.acc);
     const generator = gameState.generators.find(
         g => g.active
             && utils.distanceBetween(g.loc, activator.coords) <= activationRange
