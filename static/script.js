@@ -131,32 +131,34 @@ function updateMap(gameState) {
     }
 
     // Draw player locations.
-    const playersToDraw = gameState.players.filter(
-        p => p.alive
-            && p.id != myId
-            && getGeneratorInRange(gameState, p.coords, generatorRadius)
-    );
     if (myRole == "Hiker") {
         // For Hikers, draw each player location when they are in range of a generator.
-        playersToDraw.forEach(p => {
+        gameState.players.filter(
+            p => p.alive
+                && p.id != myId
+                && getGeneratorInRange(gameState, p.coords, generatorRadius)?.active
+        ).forEach(p => {
             const isBeast = p.role == "Beast";
             ctx.strokeStyle = isBeast ? enemyColor : otherPlayerColor;
             ctx.beginPath();
             const [posY, posX] = coordsToPixels(p.coords);
             if (isBeast) {
                 ctx.arc(posX, posY, 3, 0, 2 * Math.PI);
-            } else {
-                ctx.arc(posX, posY, 3, 0, 2 * Math.PI);
                 ctx.stroke();
                 ctx.beginPath();
                 ctx.arc(posX, posY, 6, 0, 2 * Math.PI);
+            } else {
+                ctx.arc(posX, posY, 3, 0, 2 * Math.PI);
             }
             ctx.stroke();
         });
     } else {
         // For Beasts, draw Hiker locations in scatters.
         const scatterCount = 1;
-        playersToDraw.forEach(p => {
+        gameState.players.filter(
+            p => p.alive
+                && p.id != myId
+        ).forEach(p => {
             if (p.role == "Beast") {
                 ctx.strokeStyle = otherPlayerColor;
                 ctx.beginPath();
@@ -458,6 +460,10 @@ let myAccuracy = 0;
 navigator.geolocation.watchPosition((position) => {
     hide(geolocationErrorElem);
     myCoords = [position.coords.latitude, position.coords.longitude];
+
+    myCoords = [42.93259541593919,
+    -85.58225716147136];
+
     mySpeed = position.coords.speed;
     myAccuracy = position.coords.accuracy;
 
